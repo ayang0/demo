@@ -1,100 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-cmn-Hans">
+
 <head>
-    <meta charset="utf-8">
-    <title>Mybatis Log 解析</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>解析Mybatis SQL Log</title>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body> 
-<h2><font color="#00bfff"> 输入Mybatis SQL日志：</font></h2>
- 
-<textarea id="sqlLog" rows="13" cols="140" style="font-size:20px"></textarea>
- 
- 
-<div style="border:0px deepskyblue solid;width:1425px;height:50px;text-align:right">
-    <button style="color:mediumblue;width:100px;height:60px" type="button"
-            onclick="clearLog(document.getElementById('sqlLog'))">
-        清空
-    </button>
-    <button style="color:mediumblue;width:100px;height:60px" type="submit"
-            onclick="f(document.getElementById('sqlLog'))">
-        解析SQL
-    </button>
-</div>
- 
-<h2><font color="#32cd32">解析为可执行SQL：</font></h2>
- 
-<textarea id="d1" rows="13" cols="140" style="font-size:20px"></textarea>
-<div style="border:0px deepskyblue solid;width:1425px;height:50px;text-align:right">
-    <button style="color:mediumblue;width:100px;height:60px" type="button" onclick="copySQL()">复制SQL</button>
-</div>
- 
-<div id="msg"
-     style="color:cornflowerblue;border:0px black solid;width:800px;height:20px;text-align:right;font-style: initial;font-size: large">
-</div>
-<script type="text/javascript">
-    function f(obj) {
-        var textVa = obj.value;
 
-        // 获取带问号的SQL语句
-        var statementStartIndex = textVa.indexOf('Preparing: ');
-        var statementEndIndex = textVa.length - 1;
-        for (var i = statementStartIndex; i < textVa.length; i++) {
-            if (textVa[i] == "") {
-                statementEndIndex = i;
-                break;
+<body>
+    <header>
+        <h1 class="m-8 text-center text-5xl text-indigo-600 font-black">转换Mybatis SQL</h1>
+    </header>
+    <main class="max-w-min mx-auto">
+        <div class="lg:flex lg:justify-center lg:space-x-20">
+            <div>
+                <div class="h-24 mb-5">
+                    <h2 class="mb-5">转换格式</h2>
+                    <p class="text-red-300">
+                        ==> Preparing: SELECT * FROM hello_world WHERE id = ? <br>
+                        ==> Parameters: 1(Integer)
+                    </p>
+                </div>
+                <textarea id="mybatisSqlLog" class="resize-y border rounded-md" rows="18" cols="50"></textarea>
+                <div class="flex-auto flex space-x-3 mt-2 mb-5">
+                    <button class="w-1/2 flex items-center justify-center rounded-md text-white transition duration-500 ease-in-out bg-indigo-500 hover:bg-indigo-700 transform hover:-translate-y-1 hover:scale-110" 
+                    onclick="parse(document.getElementById('mybatisSqlLog'))"
+                    >解析</button>
+                    <button class="w-1/2 flex items-center justify-center rounded-md text-white transition duration-500 ease-in-out bg-red-500 hover:bg-red-700 transform hover:-translate-y-1 hover:scale-110" 
+                    onclick="clearSql(document.getElementById('mybatisSqlLog'))">清空</button>
+                </div>
+            </div>
+            <div>
+                <div class="h-24 mb-5">
+                    <h2 class="mb-5">结果：</h2>
+                    <p class="text-green-500">SELECT * FROM hello_world WHERE id = 1</p>
+                </div>
+                <textarea id="parsedSql" class="select-all resize-y border rounded-md" rows="18" cols="50"></textarea>
+                <div class="flex-auto flex space-x-3 mt-2 mb-5">
+                    <button class="w-full items-center justify-center rounded-md text-white transition duration-500 ease-in-out bg-green-500 hover:bg-green-700 transform hover:-translate-y-1 hover:scale-110"
+                    onclick="copySql(document.getElementById('parsedSql'))">复制</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script type="text/javascript">
+        function parse(obj) {
+            var textVa = obj.value;
+    
+            // 获取带问号的SQL语句
+            var statementStartIndex = textVa.indexOf('Preparing: ');
+            var statementEndIndex = textVa.length - 1;
+            for (var i = statementStartIndex; i < textVa.length; i++) {
+                if (textVa[i] == "") {
+                    statementEndIndex = i;
+                    break;
+                }
             }
-        }
-        var statementStr = textVa.substring(statementStartIndex + "Preparing: ".length, statementEndIndex);
-        console.log(statementStr);
-        //获取参数
-        var parametersStartIndex = textVa.indexOf('Parameters: ');
-        var parametersEndIndex = textVa.length - 1;
-        for (var i = parametersStartIndex; i < textVa.length; i++) {
-            if (textVa[i] == "") {
-                parametersEndIndex = i;
-                break;
-            } else {
-                console.log(textVa[i]);
+            var statementStr = textVa.substring(statementStartIndex + "Preparing: ".length, statementEndIndex);
+            console.log(statementStr);
+            //获取参数
+            var parametersStartIndex = textVa.indexOf('Parameters: ');
+            var parametersEndIndex = textVa.length - 1;
+            for (var i = parametersStartIndex; i < textVa.length; i++) {
+                if (textVa[i] == "") {
+                    parametersEndIndex = i;
+                    break;
+                } else {
+                    console.log(textVa[i]);
+                }
             }
-        }
-        var parametersStr = textVa.substring(parametersStartIndex + "Parameters: ".length, parametersEndIndex);
-        parametersStr = parametersStr.split(",");
-        console.log(parametersStr);
-        for (var i = 0; i < parametersStr.length; i++) {
-            // 如果数据中带括号将使用其他逻辑
-            tempStr = parametersStr[i].substring(0, parametersStr[i].indexOf("("));
-            // 获取括号中内容
-            typeStr = parametersStr[i].substring(parametersStr[i].indexOf("(") + 1, parametersStr[i].indexOf(")"));
-            // 如果为字符类型
-            if (typeStr == "String" || typeStr == "Timestamp") {
-                statementStr = statementStr.replace("?", "'" + tempStr.trim() + "'");
-            } else {
-                // 数值类型
-                statementStr = statementStr.replace("?", tempStr.trim());
+            var parametersStr = textVa.substring(parametersStartIndex + "Parameters: ".length, parametersEndIndex);
+            parametersStr = parametersStr.split(",");
+            console.log(parametersStr);
+            for (var i = 0; i < parametersStr.length; i++) {
+                // 如果数据中带括号将使用其他逻辑
+                tempStr = parametersStr[i].substring(0, parametersStr[i].indexOf("("));
+                // 获取括号中内容
+                typeStr = parametersStr[i].substring(parametersStr[i].indexOf("(") + 1, parametersStr[i].indexOf(")"));
+                // 如果为字符类型
+                if (typeStr == "String" || typeStr == "Timestamp") {
+                    statementStr = statementStr.replace("?", "'" + tempStr.trim() + "'");
+                } else {
+                    // 数值类型
+                    statementStr = statementStr.replace("?", tempStr.trim());
+                }
             }
+            console.log(statementStr);
+            document.getElementById("parsedSql").innerHTML = statementStr.split('\n')[0];
+            return textVa;
         }
-        console.log(statementStr);
-        document.getElementById("d1").innerHTML = statementStr.split('\n')[0];
-        return textVa;
-    }
-
-    function copySQL() {
-        var SQL = document.getElementById("d1");
-        SQL.select(); // 选择对象
-        document.execCommand("Copy"); // 执行浏览器复制命令
-        var msg = document.getElementById("msg");
-        msg.innerHTML = "已复制到剪切板";
-        setTimeout(function () {
-            msg.innerHTML = "";
-        }, 3000);
-
-    }
-
-    function clearLog(obj) {
-        obj.select();
-        obj.value = "";
-    }
-
-</script>
+    
+        function copySql() {
+            var SQL = document.getElementById("parsedSql");
+            SQL.select(); // 选择对象
+            document.execCommand("Copy"); // 执行浏览器复制命令
+            // var msg = document.getElementById("msg");
+            // msg.innerHTML = "已复制到剪切板";
+            // setTimeout(function () {
+            //     msg.innerHTML = "";
+            // }, 3000);
+    
+        }
+    
+        function clearSql(obj) {
+            obj.select();
+            obj.value = "";
+        }
+    
+    </script>
 </body>
+
 </html>
